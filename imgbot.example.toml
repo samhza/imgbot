@@ -1,0 +1,17 @@
+Token = "bot token here"
+AppID = 0
+# directory to get images from
+ImagesDir = "/path/to/cats"
+# in Content, "%filename%" gets replaced with the filename
+Content = "take a look! %filename%"
+# bot's "playing" status
+ActivityName = "with a ball of yarn"
+# name and description for slash command
+CommandName = "cat"
+CommandDescription = "send a random cat"
+
+# periodically send images into a channel (channel id)
+PostChannel = 0
+# how often to post images
+# Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h"
+PostInterval = "30m"
