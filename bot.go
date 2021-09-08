@@ -55,7 +55,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	cmds, err := ses.BulkOverwriteGuildCommands(cfg.AppID, 388492601365495809, []discord.Command{{
+	cmds, err := ses.BulkOverwriteCommands(cfg.AppID, []discord.Command{{
 		Name:        cfg.CommandName,
 		Description: cfg.CommandDescription,
 		Type:        discord.ChatInputCommand,
