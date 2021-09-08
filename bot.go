@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"io"
 	"log"
 	"math/rand"
 	"os"
@@ -24,12 +25,12 @@ import (
 type Config struct {
 	Token              string
 	AppID              discord.AppID
-	ImagesDir          string
+	ImageDirs          []string
 	Content            string
 	ActivityName       string
 	CommandName        string
 	CommandDescription string
-	PostChannel        discord.ChannelID
+	PostChannels       []discord.ChannelID
 	PostInterval       string
 }
 
@@ -72,7 +73,7 @@ func main() {
 		if data.ID != cmdid {
 			return
 		}
-		fname, f, err := randomImage(cfg.ImagesDir)
+		fname, f, err := randomImage(cfg.ImageDirs)
 		if err != nil {
 			ses.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
 				Type: api.MessageInteractionWithSource,
@@ -106,13 +107,14 @@ func main() {
 	}
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+Outer:
 	for {
 		select {
 		case <-sigs:
 			log.Println("signal received")
 			os.Exit(0)
 		case <-waitInterval(interval):
-			fname, f, err := randomImage(cfg.ImagesDir)
+			fname, f, err := randomImage(cfg.ImageDirs)
 			if err != nil {
 				log.Println("getting random image:", err)
 				continue
@@ -121,15 +123,24 @@ func main() {
 			if cfg.Content != "" {
 				content = strings.ReplaceAll(cfg.Content, "%filename%", fname)
 			}
-			_, err = ses.SendMessageComplex(cfg.PostChannel,
-				api.SendMessageData{
-					Content: content,
-					Files:   []sendpart.File{{Name: fname, Reader: f}},
-				})
-			f.Close()
-			if err != nil {
-				log.Println("sending message:", err)
+			for _, ch := range cfg.PostChannels {
+				_, err = ses.SendMessageComplex(ch,
+					api.SendMessageData{
+						Content: content,
+						Files:   []sendpart.File{{Name: fname, Reader: f}},
+					})
+				if err != nil {
+					log.Println("sending message:", err)
+					continue
+				}
+				_, err = f.Seek(io.SeekStart, 0)
+				if err != nil {
+					log.Println("seeking image:", err)
+					f.Close()
+					continue Outer
+				}
 			}
+			f.Close()
 		}
 	}
 }
@@ -140,15 +151,22 @@ func waitInterval(int time.Duration) <-chan time.Time {
 	return time.After(dur)
 }
 
-func randomImage(dir string) (string, *os.File, error) {
-	entries, err := os.ReadDir(dir)
+func randomImage(dirs []string) (string, *os.File, error) {
+	var entries []string
+	for _, dir := range dirs {
+		ents, err := os.ReadDir(dir)
+		if err != nil {
+			return "", nil, err
+		}
+		for _, ent := range ents {
+			entries = append(entries, filepath.Join(dir, ent.Name()))
+		}
+	}
+	fname := entries[rand.Intn(len(entries))]
+	f, err := os.Open(fname)
 	if err != nil {
 		return "", nil, err
 	}
-	fname := entries[rand.Intn(len(entries))].Name()
-	f, err := os.Open(filepath.Join(dir, fname))
-	if err != nil {
-		return "", nil, err
-	}
+	_, fname = filepath.Split(fname)
 	return fname, f, err
 }
