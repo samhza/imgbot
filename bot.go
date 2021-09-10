@@ -19,7 +19,7 @@ import (
 	"github.com/diamondburned/arikawa/v3/session"
 	"github.com/diamondburned/arikawa/v3/utils/json/option"
 	"github.com/diamondburned/arikawa/v3/utils/sendpart"
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 )
 
 type Config struct {
@@ -52,7 +52,7 @@ func main() {
 		log.Fatalln("parsing PostInterval:", err)
 	}
 
-	ses, err := session.New("Bot " + cfg.Token)
+	ses, err := session.NewWithIntents("Bot "+cfg.Token, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
