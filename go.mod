@@ -1,4 +1,4 @@
-module go.samhza.com/imgbot
+module samhza.com/imgbot
 
 go 1.16
 

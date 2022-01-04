@@ -1,5 +1,7 @@
 # imgbot
+`go install samhza.com/imgbot@latest`
 
+---
 Discord bot that posts a random image from a directory into Discord channels of
 your choosing. Created for a bot that posts images of cats.
 
